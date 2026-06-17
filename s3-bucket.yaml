@@ -16,6 +16,7 @@ Parameters:
 
 Conditions:
   VersioningEnabled: !Equals [!Ref EnableVersioning, 'true']
+  BlockPublicAccessEnabled: !Equals [!Ref BlockPublicAccess, 'true']
 
 Resources:
   S3Bucket:
@@ -25,10 +26,10 @@ Resources:
       VersioningConfiguration:
         Status: !If [VersioningEnabled, Enabled, Suspended]
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: !Ref BlockPublicAccess
-        BlockPublicPolicy: !Ref BlockPublicAccess
-        IgnorePublicAcls: !Ref BlockPublicAccess
-        RestrictPublicBuckets: !Ref BlockPublicAccess
+        BlockPublicAcls: !If [BlockPublicAccessEnabled, true, false]
+        BlockPublicPolicy: !If [BlockPublicAccessEnabled, true, false]
+        IgnorePublicAcls: !If [BlockPublicAccessEnabled, true, false]
+        RestrictPublicBuckets: !If [BlockPublicAccessEnabled, true, false]
 
 Outputs:
   BucketName:
