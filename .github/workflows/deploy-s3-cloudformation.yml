@@ -10,6 +10,9 @@ jobs:
   deploy:
     name: Validate and deploy S3 bucket
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
+      S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME || 'my-unique-bucket-name' }}
 
     steps:
       - name: Checkout repository
@@ -35,7 +38,7 @@ jobs:
         with:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID || secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY || secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION || secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Validate CloudFormation template
         run: |
