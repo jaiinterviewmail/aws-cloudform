@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create an S3 bucket with optional versioning and public access blocking.
+Parameters:
+  BucketName:
+    Type: String
+    Description: Name of the S3 bucket to create.
+  AccessControl:
+    Type: String
+    Default: Private
+    AllowedValues:
+      - Private
+      - PublicRead
+      - PublicReadWrite
+      - AuthenticatedRead
+      - LogDeliveryWrite
+      - BucketOwnerRead
+      - BucketOwnerFullControl
+    Description: Access control setting for the bucket.
+  EnableVersioning:
+    Type: String
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Enable versioning for the bucket.
+  BlockPublicAccess:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: Block public access to the bucket.
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      AccessControl: !Ref AccessControl
+      VersioningConfiguration:
+        Status: !If
+          - VersioningEnabled
+          - Enabled
+          - Suspended
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !Ref BlockPublicAccess
+        BlockPublicPolicy: !Ref BlockPublicAccess
+        IgnorePublicAcls: !Ref BlockPublicAccess
+        RestrictPublicBuckets: !Ref BlockPublicAccess
+Conditions:
+  VersioningEnabled: !Equals [!Ref EnableVersioning, 'true']
+Outputs:
+  BucketName:
+    Description: The name of the S3 bucket.
+    Value: !Ref S3Bucket
+  BucketArn:
+    Description: The ARN of the S3 bucket.
+    Value: !GetAtt S3Bucket.Arn

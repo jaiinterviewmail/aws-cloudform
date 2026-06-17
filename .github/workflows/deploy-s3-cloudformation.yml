@@ -1,0 +1,54 @@
+name: Deploy S3 via CloudFormation
+
+on:
+  push:
+    paths:
+      - 's3-bucket.yaml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Validate and deploy S3 bucket
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Load environment variables
+        run: |
+          if [ -f .env ]; then
+            set -o allexport
+            source .env
+            set +o allexport
+            echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
+            echo "AWS_REGION=$AWS_REGION" >> $GITHUB_ENV
+            echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> $GITHUB_ENV
+            echo "Loaded .env"
+          else
+            echo ".env file not found"
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID || secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY || secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION || secrets.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: |
+          aws cloudformation validate-template --template-body file://s3-bucket.yaml
+
+      - name: Deploy CloudFormation stack
+        env:
+          BUCKET_NAME: ${{ env.S3_BUCKET_NAME || secrets.S3_BUCKET_NAME }}
+          ENABLE_VERSIONING: 'true'
+          BLOCK_PUBLIC_ACCESS: 'true'
+        run: |
+          aws cloudformation deploy \
+            --stack-name my-s3-bucket-stack \
+            --template-file s3-bucket.yaml \
+            --parameter-overrides BucketName=${BUCKET_NAME} EnableVersioning=${ENABLE_VERSIONING} BlockPublicAccess=${BLOCK_PUBLIC_ACCESS} \
+            --capabilities CAPABILITY_NAMED_IAM
