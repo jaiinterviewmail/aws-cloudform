@@ -11,4 +11,4 @@ description: Runs the main workflow and fixes errors when possible.
 # My Agent
 
 name: my-agent
-description: Runs the main workflow and fixes errors when possible.
+description: Runs the main workflow means main.yml and fixes errors when possible.
