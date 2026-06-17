@@ -1,26 +1,41 @@
 name: Deploy S3 Bucket
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - 's3-bucket.yaml'
+      - '.github/workflows/main.yml'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    environment:
-      name: dev
+    environment: dev
 
     env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
       BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Environment Variables
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: aws cloudformation validate-template --template-body file://s3-bucket.yaml
+
+      - name: Deploy CloudFormation stack
         run: |
-          echo "AWS Region: $AWS_REGION"
-          echo "Bucket Name: $BUCKET_NAME"
+          aws cloudformation deploy \
+            --stack-name s3-bucket-stack \
+            --template-file s3-bucket.yaml \
+            --parameter-overrides BucketName=${{ env.BUCKET_NAME }} EnableVersioning=true BlockPublicAccess=true \
+            --capabilities CAPABILITY_NAMED_IAM

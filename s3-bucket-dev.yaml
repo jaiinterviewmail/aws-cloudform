@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create an S3 bucket (ap-south-1) with optional versioning and public access block.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Globally-unique S3 bucket name.
+  EnableVersioning:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true','false']
+  BlockPublicAccess:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true','false']
+
+Conditions:
+  VersioningEnabled: !Equals [!Ref EnableVersioning, 'true']
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: !If [VersioningEnabled, Enabled, Suspended]
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: !Ref BlockPublicAccess
+        BlockPublicPolicy: !Ref BlockPublicAccess
+        IgnorePublicAcls: !Ref BlockPublicAccess
+        RestrictPublicBuckets: !Ref BlockPublicAccess
+
+Outputs:
+  BucketName:
+    Description: S3 bucket name
+    Value: !Ref S3Bucket
+  BucketArn:
+    Description: S3 bucket ARN
+    Value: !GetAtt S3Bucket.Arn
