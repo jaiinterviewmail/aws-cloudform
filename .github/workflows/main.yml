@@ -1,0 +1,26 @@
+name: Deploy S3 Bucket
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: dev
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Show Environment Variables
+        run: |
+          echo "AWS Region: $AWS_REGION"
+          echo "Bucket Name: $BUCKET_NAME"
