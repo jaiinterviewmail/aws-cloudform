@@ -16,18 +16,12 @@ jobs:
 
     env:
       AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
-      BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+      BUCKET_NAME_PREFIX: ${{ secrets.S3_BUCKET_NAME || 'my-s3-bucket' }}
+      BUCKET_NAME: ''
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Check AWS Credentials
-        run: |
-          echo "Access Key: ${{ secrets.AWS_ACCESS_KEY_ID }}"
-          echo "Secret Key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}"  
-          echo "Secret Key: ${{ secrets.AWS_REGION }}"
-          echo "Secret Key: ${{ secrets.S3_BUCKET_NAME }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -43,6 +37,14 @@ jobs:
         run: |
           aws sts get-caller-identity
 
+      - name: Generate unique bucket name
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          PREFIX=$(echo "$BUCKET_NAME_PREFIX" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]//g')
+          UNIQUE_BUCKET_NAME="${PREFIX}-${ACCOUNT_ID}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          echo "BUCKET_NAME=${UNIQUE_BUCKET_NAME}" >> "$GITHUB_ENV"
+          echo "Using bucket name: ${UNIQUE_BUCKET_NAME}"
+
       - name: Deploy CloudFormation stack
         run: |
           aws cloudformation deploy \
@@ -50,5 +52,4 @@ jobs:
             --template-file s3-bucket.yaml \
             --parameter-overrides BucketName=${{ env.BUCKET_NAME }} EnableVersioning=true BlockPublicAccess=true \
             --capabilities CAPABILITY_NAMED_IAM
-
       
