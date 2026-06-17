@@ -4,10 +4,12 @@
 # To make this agent available, merge this file into the default repository branch.
 # For format details, see: https://gh.io/customagents/config
 
-name:
-description:
+name: my-agent
+description: Runs the main workflow and fixes errors when possible.
 ---
 
 # My Agent
-run workflow min.ymal ; if error occur fix all errors;
-Describe what your agent does here.
+
+Run workflow `main.yml`; if errors occur, fix them before completing.
+
+This agent runs your primary workflow and iterates on fixes when failures are detected.
