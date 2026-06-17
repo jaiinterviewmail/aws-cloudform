@@ -10,6 +10,5 @@ description: Runs the main workflow and fixes errors when possible.
 
 # My Agent
 
-Run workflow `main.yml`; if errors occur, fix them before completing.
-
-This agent runs your primary workflow and iterates on fixes when failures are detected.
+name: my-agent
+description: Runs the main workflow and fixes errors when possible.
