@@ -39,3 +39,7 @@ jobs:
             --template-file s3-bucket.yaml \
             --parameter-overrides BucketName=${{ env.BUCKET_NAME }} EnableVersioning=true BlockPublicAccess=true \
             --capabilities CAPABILITY_NAMED_IAM
+
+      - name: Verify AWS Login
+        run: |
+          aws sts get-caller-identity
