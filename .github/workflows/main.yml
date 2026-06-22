@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - feature/jk-changes
     paths:
       - 's3-bucket.yaml'
       - '.github/workflows/main.yml'
@@ -17,39 +18,44 @@ jobs:
     env:
       AWS_REGION: ${{ secrets.AWS_REGION || 'ap-south-1' }}
       BUCKET_NAME_PREFIX: ${{ secrets.S3_BUCKET_NAME || 'my-s3-bucket' }}
-      BUCKET_NAME: ''
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      - name: Configure AWS temporary credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Validate CloudFormation template
-        run: aws cloudformation validate-template --template-body file://s3-bucket.yaml
 
       - name: Verify AWS Login
         run: |
           aws sts get-caller-identity
+
+      - name: Validate CloudFormation template
+        run: |
+          aws cloudformation validate-template \
+            --template-body file://s3-bucket.yaml
 
       - name: Generate unique bucket name
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           PREFIX=$(echo "$BUCKET_NAME_PREFIX" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]//g')
           UNIQUE_BUCKET_NAME="${PREFIX}-${ACCOUNT_ID}-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
-          echo "BUCKET_NAME=${UNIQUE_BUCKET_NAME}" >> "$GITHUB_ENV"
+
+          echo "BUCKET_NAME=${UNIQUE_BUCKET_NAME}" >> $GITHUB_ENV
           echo "Using bucket name: ${UNIQUE_BUCKET_NAME}"
 
-      - name: Deploy CloudFormation stack
+      - name: Deploy CloudFormation Stack
         run: |
           aws cloudformation deploy \
             --stack-name s3-bucket-stack1 \
             --template-file s3-bucket.yaml \
-            --parameter-overrides BucketName=${{ env.BUCKET_NAME }} EnableVersioning=true BlockPublicAccess=true \
+            --parameter-overrides \
+              BucketName=${BUCKET_NAME} \
+              EnableVersioning=true \
+              BlockPublicAccess=true \
             --capabilities CAPABILITY_NAMED_IAM
-      
